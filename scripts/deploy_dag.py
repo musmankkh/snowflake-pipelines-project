@@ -2,7 +2,7 @@ import os
 import sys
 from snowflake.snowpark import Session
 from snowflake.core import Root
-from snowflake.core.task.dagv1 import DAG, DAGTask
+from snowflake.core.task.dagv1 import DAG, DAGTask, DAGOperation
 
 
 # ─────────────────────────────────────────────
@@ -69,10 +69,11 @@ def deploy(env: str = "DEV"):
 
         ingest_task >> silver_task >> gold_task
 
-    # ✅ Deploy via Root API (snowflake-core 1.x+)
+    # ✅ Deploy via DAGOperation (snowflake-core 1.x+)
     root = Root(session)
     task_collection = root.databases[db].schemas["INTEGRATIONS"].tasks
-    dag.deploy(task_collection, mode="orReplace")
+    dag_op = DAGOperation(task_collection)
+    dag_op.deploy(dag, mode="orReplace")
 
     print(f"✅ DAG '{dag_name}' deployed successfully for {env}.")
 
