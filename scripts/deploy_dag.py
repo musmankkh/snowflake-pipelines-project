@@ -1,7 +1,7 @@
 import os
 import sys
 from snowflake.snowpark import Session
-from snowflake.core.task.dagv1 import DAG, DAGTask
+from snowflake.core.task.dagv1 import DAG, DAGTask, deploy_dag
 
 
 # ─────────────────────────────────────────────
@@ -39,37 +39,37 @@ def deploy(env: str = "DEV"):
         warehouse=warehouse,
     ) as dag:
 
-        # ── Task 1: Bronze Ingestion Notebook
+        # Task 1 — Bronze Notebook
         ingest_task = DAGTask(
             name="INGEST_FILES",
-            definition=f"""
+            definition=f'''
                 EXECUTE NOTEBOOK "{db}"."BRONZELAYER"."bronze_ingest"()
-            """,
+            ''',
             warehouse=warehouse,
         )
 
-        # ── Task 2: dbt Silver
+        # Task 2 — dbt Silver
         silver_task = DAGTask(
             name="DBT_SILVER",
-            definition=f"""
+            definition=f'''
                 CALL {db}.INTEGRATIONS.RUN_DBT_LAYER('silver', '{env.lower()}')
-            """,
+            ''',
             warehouse=warehouse,
         )
 
-        # ── Task 3: dbt Gold
+        # Task 3 — dbt Gold
         gold_task = DAGTask(
             name="DBT_GOLD",
-            definition=f"""
+            definition=f'''
                 CALL {db}.INTEGRATIONS.RUN_DBT_LAYER('gold', '{env.lower()}')
-            """,
+            ''',
             warehouse=warehouse,
         )
 
         ingest_task >> silver_task >> gold_task
 
-    # ✅ NEW CORRECT METHOD
-    dag.deploy(session)
+    # ✅ CORRECT DEPLOY METHOD FOR snowflake-core 1.11+
+    deploy_dag(session, dag)
 
     print(f"✅ DAG '{dag_name}' deployed successfully for {env}.")
 
