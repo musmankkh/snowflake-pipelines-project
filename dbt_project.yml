@@ -23,15 +23,15 @@ models:
   my_dbt_projects:
 
     bronze:
-      +database: BRONZE
+      +schema: BRONZELAYER
       +materialized: view
 
     silver:
-      +database: SILVER
+      +schema: SILVERLAYER
       +materialized: table
 
     gold:
-      +database: GOLD
+      +schema: GOLDLAYER
 
       dimensions:
         +materialized: table
