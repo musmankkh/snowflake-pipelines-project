@@ -20,18 +20,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python 3.11
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Install dbt-snowflake
+      - name: Install dbt
         run: pip install dbt-snowflake
 
-      - name: Create profiles.yml (DEV)
+      - name: Create dbt profiles.yml (DEV)
         run: |
           mkdir -p ~/.dbt
-          cat > ~/.dbt/profiles.yml << 'PROFILE'
+          cat > ~/.dbt/profiles.yml <<EOF
           my_dbt_projects:
             target: dev
             outputs:
@@ -45,7 +45,7 @@ jobs:
                 database: ${{ secrets.SNOWFLAKE_DEV_DB }}
                 schema: BRONZELAYER
                 threads: 4
-          PROFILE
+          EOF
 
       - name: dbt deps
         run: dbt deps
@@ -55,7 +55,7 @@ jobs:
 
 
   # ─────────────────────────────────────────────
-  # JOB 2 — DEPLOY TO PROD (MERGE TO MAIN)
+  # JOB 2 — PROD DEPLOY (ON MERGE TO MAIN)
   # ─────────────────────────────────────────────
   dbt-deploy-prod:
     name: "Deploy: dbt build on prod"
@@ -66,19 +66,23 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python 3.11
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
       - name: Install dbt and Snowflake CLI
         run: |
-          pip install dbt-snowflake snowflake-cli-labs
+          pip install dbt-snowflake
+          pip install snowflake-cli
 
-      - name: Create profiles.yml (PROD)
+      # ───────────────
+      # DBT PROD PROFILE
+      # ───────────────
+      - name: Create dbt profiles.yml (PROD)
         run: |
           mkdir -p ~/.dbt
-          cat > ~/.dbt/profiles.yml << 'PROFILE'
+          cat > ~/.dbt/profiles.yml <<EOF
           my_dbt_projects:
             target: prod
             outputs:
@@ -92,7 +96,7 @@ jobs:
                 database: ${{ secrets.SNOWFLAKE_PROD_DB }}
                 schema: BRONZELAYER
                 threads: 4
-          PROFILE
+          EOF
 
       - name: dbt deps
         run: dbt deps
@@ -100,22 +104,28 @@ jobs:
       - name: dbt build (PROD)
         run: dbt build --target prod
 
-      # ✅ FIXED Snowflake CLI v3 Syntax
-      - name: Refresh Snowflake Git repo
-        env:
-          SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
-          SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
-          SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
-          SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
-          SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
-          SNOWFLAKE_PROD_DB: ${{ secrets.SNOWFLAKE_PROD_DB }}
+      # ───────────────
+      # SNOWFLAKE CLI CONNECTION CONFIG
+      # ───────────────
+      - name: Configure Snowflake CLI connection
+        run: |
+          mkdir -p ~/.snowflake
+          cat > ~/.snowflake/config.toml <<EOF
+          [connections.prod]
+          account = "${{ secrets.SNOWFLAKE_ACCOUNT }}"
+          user = "${{ secrets.SNOWFLAKE_USER }}"
+          password = "${{ secrets.SNOWFLAKE_PASSWORD }}"
+          role = "${{ secrets.SNOWFLAKE_ROLE }}"
+          warehouse = "${{ secrets.SNOWFLAKE_WAREHOUSE }}"
+          database = "${{ secrets.SNOWFLAKE_PROD_DB }}"
+          schema = "INTEGRATIONS"
+          EOF
+
+      # ───────────────
+      # REFRESH GIT REPO INSIDE SNOWFLAKE
+      # ───────────────
+      - name: Refresh Snowflake Git repository
         run: |
           snow sql \
-            -a $SNOWFLAKE_ACCOUNT \
-            -u $SNOWFLAKE_USER \
-            -p $SNOWFLAKE_PASSWORD \
-            -r $SNOWFLAKE_ROLE \
-            -w $SNOWFLAKE_WAREHOUSE \
-            -d $SNOWFLAKE_PROD_DB \
-            -s INTEGRATIONS \
+            --connection prod \
             -q "ALTER GIT REPOSITORY DBT_DEV_DB.INTEGRATIONS.DBT_GIT_REPO FETCH"
