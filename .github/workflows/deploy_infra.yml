@@ -1,0 +1,37 @@
+name: Deploy Snowflake Infrastructure
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/deploy_dag.py"
+      - ".github/workflows/deploy_infra.yml"
+
+jobs:
+  deploy-dag:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Snowflake SDK
+        run: |
+          pip install snowflake-core snowflake-snowpark-python
+
+      - name: Deploy DEV DAG
+        run: python scripts/deploy_dag.py DEV
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+          SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+          SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
+
+      - name: Deploy PROD DAG
+        run: python scripts/deploy_dag.py PROD
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+          SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+          SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
