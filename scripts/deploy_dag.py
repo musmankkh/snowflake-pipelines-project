@@ -3,6 +3,7 @@ import sys
 from snowflake.snowpark import Session
 from snowflake.core import Root
 from snowflake.core.task.dagv1 import DAG, DAGTask, DAGOperation
+from snowflake.core.task import Cron                               # ← add this
 
 
 # ─────────────────────────────────────────────
@@ -36,7 +37,7 @@ def deploy(env: str = "DEV"):
 
     with DAG(
         name=dag_name,
-        schedule="USING CRON 0 2 * * * UTC",   # Daily at 02:00 UTC
+        schedule=Cron("0 2 * * *", "UTC"),     # ← Cron object, not a raw string
         warehouse=warehouse,
     ) as dag:
 
@@ -69,7 +70,6 @@ def deploy(env: str = "DEV"):
 
         ingest_task >> silver_task >> gold_task
 
-    # ✅ Pass the schema object — DAGOperation.drop() calls .tasks internally
     root = Root(session)
     schema = root.databases[db].schemas["INTEGRATIONS"]
     dag_op = DAGOperation(schema)
