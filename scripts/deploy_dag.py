@@ -69,10 +69,10 @@ def deploy(env: str = "DEV"):
 
         ingest_task >> silver_task >> gold_task
 
-    # ✅ Deploy via DAGOperation (snowflake-core 1.x+)
+    # ✅ Pass the schema object — DAGOperation.drop() calls .tasks internally
     root = Root(session)
-    task_collection = root.databases[db].schemas["INTEGRATIONS"].tasks
-    dag_op = DAGOperation(task_collection)
+    schema = root.databases[db].schemas["INTEGRATIONS"]
+    dag_op = DAGOperation(schema)
     dag_op.deploy(dag, mode="orReplace")
 
     print(f"✅ DAG '{dag_name}' deployed successfully for {env}.")

@@ -8,8 +8,10 @@ on:
       - ".github/workflows/deploy_infra.yml"
 
 jobs:
-  deploy-dag:
+  deploy-dev:
+    name: Deploy DEV DAG
     runs-on: ubuntu-latest
+    environment: dev                        # maps to a GitHub Environment (optional but recommended)
 
     steps:
       - uses: actions/checkout@v4
@@ -20,28 +22,43 @@ jobs:
 
       - name: Install Snowflake SDK
         run: |
-          pip install snowflake-core snowflake-snowpark-python
+          pip install \
+            "snowflake-core==1.11.0" \
+            "snowflake-snowpark-python==1.45.0"
 
-      # ─────────────────────────────
-      # Deploy DEV DAG
-      # ─────────────────────────────
       - name: Deploy DEV DAG
         run: python scripts/deploy_dag.py DEV
         env:
-          SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
-          SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
-          SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
-          SNOWFLAKE_ROLE: DBT_ROLE
+          SNOWFLAKE_ACCOUNT:   ${{ secrets.SNOWFLAKE_ACCOUNT }}
+          SNOWFLAKE_USER:      ${{ secrets.SNOWFLAKE_USER }}
+          SNOWFLAKE_PASSWORD:  ${{ secrets.SNOWFLAKE_PASSWORD }}
+          SNOWFLAKE_ROLE:      DBT_ROLE
           SNOWFLAKE_WAREHOUSE: DBT_WH
 
-      # ─────────────────────────────
-      # Deploy PROD DAG
-      # ─────────────────────────────
+  deploy-prod:
+    name: Deploy PROD DAG
+    runs-on: ubuntu-latest
+    environment: prod                       # add a required reviewer in GitHub → Settings → Environments
+    needs: deploy-dev                       # ← only runs if DEV succeeds
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Snowflake SDK
+        run: |
+          pip install \
+            "snowflake-core==1.11.0" \
+            "snowflake-snowpark-python==1.45.0"
+
       - name: Deploy PROD DAG
         run: python scripts/deploy_dag.py PROD
         env:
-          SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
-          SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
-          SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
-          SNOWFLAKE_ROLE: DBT_ROLE
+          SNOWFLAKE_ACCOUNT:   ${{ secrets.SNOWFLAKE_ACCOUNT }}
+          SNOWFLAKE_USER:      ${{ secrets.SNOWFLAKE_USER }}
+          SNOWFLAKE_PASSWORD:  ${{ secrets.SNOWFLAKE_PASSWORD }}
+          SNOWFLAKE_ROLE:      DBT_ROLE
           SNOWFLAKE_WAREHOUSE: DBT_WH
