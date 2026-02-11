@@ -1,0 +1,35 @@
+version: 2
+
+sources:
+  - name: silver
+    description: "SILVER layer - Clean Olist e-commerce data"
+    database: SILVER
+    schema: PUBLIC
+    
+    tables:
+      - name: olist_customers_dataset
+        description: "Clean customer data"
+        
+      - name: olist_geolocation_dataset
+        description: "Clean geolocation data for Brazilian zip codes"
+        
+      - name: olist_orders_dataset
+        description: "Clean orders data"
+        
+      - name: olist_order_items_dataset
+        description: "Clean order items data"
+        
+      - name: olist_order_payments_dataset
+        description: "Clean payment data for orders"
+        
+      - name: olist_order_reviews_dataset
+        description: "Clean customer reviews"
+        
+      - name: olist_products_dataset
+        description: "Clean products data"
+        
+      - name: olist_sellers_dataset
+        description: "Clean sellers data"
+        
+      - name: product_category_name_translation
+        description: "Product category translations from Portuguese to English"

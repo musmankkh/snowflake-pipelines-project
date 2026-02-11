@@ -1,0 +1,44 @@
+name: 'my_dbt_projects'
+version: '1.0.0'
+config-version: 2
+
+profile: 'my_dbt_projects'
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+# Snowflake best practice
+quoting:
+  identifier: false
+
+models:
+  my_dbt_projects:
+
+    bronze:
+      +database: BRONZE
+      +materialized: view
+
+    silver:
+      +database: SILVER
+      +materialized: table
+
+    gold:
+      +database: GOLD
+
+      dimensions:
+        +materialized: table
+
+      facts:
+        +materialized: table
+        
+      semantic:
+        +materialized: view
+
