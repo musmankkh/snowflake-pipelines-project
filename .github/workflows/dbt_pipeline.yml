@@ -32,7 +32,7 @@ jobs:
         run: |
           mkdir -p ~/.dbt
           cat > ~/.dbt/profiles.yml << 'PROFILE'
-          your_project_name:
+          my_dbt_projects:
             target: dev
             outputs:
               dev:
@@ -43,7 +43,7 @@ jobs:
                 role: ${{ secrets.SNOWFLAKE_ROLE }}
                 warehouse: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
                 database: ${{ secrets.SNOWFLAKE_DEV_DB }}
-                schema: BRONZE
+                schema: BRONZELAYER
                 threads: 4
           PROFILE
 
@@ -76,7 +76,7 @@ jobs:
         run: |
           mkdir -p ~/.dbt
           cat > ~/.dbt/profiles.yml << 'PROFILE'
-          your_project_name:
+          my_dbt_projects:
             target: prod
             outputs:
               prod:
@@ -87,7 +87,7 @@ jobs:
                 role: ${{ secrets.SNOWFLAKE_ROLE }}
                 warehouse: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
                 database: ${{ secrets.SNOWFLAKE_PROD_DB }}
-                schema: BRONZE
+                schema: BRONZELAYER
                 threads: 4
           PROFILE
 
