@@ -22,16 +22,26 @@ jobs:
         run: |
           pip install snowflake-core snowflake-snowpark-python
 
+      # ─────────────────────────────
+      # Deploy DEV DAG
+      # ─────────────────────────────
       - name: Deploy DEV DAG
         run: python scripts/deploy_dag.py DEV
         env:
           SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
           SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
           SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
+          SNOWFLAKE_ROLE: DBT_ROLE
+          SNOWFLAKE_WAREHOUSE: DBT_WH
 
+      # ─────────────────────────────
+      # Deploy PROD DAG
+      # ─────────────────────────────
       - name: Deploy PROD DAG
         run: python scripts/deploy_dag.py PROD
         env:
           SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
           SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
           SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
+          SNOWFLAKE_ROLE: DBT_ROLE
+          SNOWFLAKE_WAREHOUSE: DBT_WH
