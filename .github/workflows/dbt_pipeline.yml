@@ -17,18 +17,16 @@ jobs:
     if: github.event_name == 'pull_request'
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
       - name: Install dbt
         run: pip install dbt-snowflake
 
-      - name: Create dbt profiles.yml (DEV)
+      - name: Create profiles.yml (DEV)
         run: |
           mkdir -p ~/.dbt
           cat > ~/.dbt/profiles.yml <<EOF
@@ -55,7 +53,7 @@ jobs:
 
 
   # ─────────────────────────────────────────────
-  # JOB 2 — PROD DEPLOY (ON MERGE TO MAIN)
+  # JOB 2 — DEPLOY TO PROD (on merge)
   # ─────────────────────────────────────────────
   dbt-deploy-prod:
     name: "Deploy: dbt build on prod"
@@ -63,23 +61,19 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Install dbt and Snowflake CLI
+      - name: Install dbt + Snowflake CLI
         run: |
           pip install dbt-snowflake
-          pip install snowflake-cli
+          pip install snowflake-cli-labs
 
-      # ───────────────
-      # DBT PROD PROFILE
-      # ───────────────
-      - name: Create dbt profiles.yml (PROD)
+      # ───────────── dbt PROFILE (PROD) ─────────────
+      - name: Create profiles.yml (PROD)
         run: |
           mkdir -p ~/.dbt
           cat > ~/.dbt/profiles.yml <<EOF
@@ -104,9 +98,8 @@ jobs:
       - name: dbt build (PROD)
         run: dbt build --target prod
 
-      # ───────────────
-      # SNOWFLAKE CLI CONNECTION CONFIG
-      # ───────────────
+
+      # ───────────── Snowflake CLI Connection ─────────────
       - name: Configure Snowflake CLI connection
         run: |
           mkdir -p ~/.snowflake
@@ -121,11 +114,13 @@ jobs:
           schema = "INTEGRATIONS"
           EOF
 
-      # ───────────────
-      # REFRESH GIT REPO INSIDE SNOWFLAKE
-      # ───────────────
+          # REQUIRED for Snowflake CLI security
+          chmod 600 ~/.snowflake/config.toml
+
+
+      # ───────────── Refresh Snowflake Git Repo ─────────────
       - name: Refresh Snowflake Git repository
         run: |
           snow sql \
             --connection prod \
-            -q "ALTER GIT REPOSITORY DBT_DEV_DB.INTEGRATIONS.DBT_GIT_REPO FETCH"
+            -q "ALTER GIT REPOSITORY DBT_DEV_DB.INTEGRATIONS.DBT_GIT_REPO FETCH;"
